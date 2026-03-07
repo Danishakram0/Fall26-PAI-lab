@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Profiling Result</title>
+</head>
+<body>
+    <h2>Face Profiling Result</h2>
+    <h3>Personality Type: {{ personality }}</h3>
+    <img src="{{ url_for('static', filename='human-face.webp') }}" width="400">
+    <br><br>
+    <a href="/">Try Another Image</a>
+</body>
+</html>
