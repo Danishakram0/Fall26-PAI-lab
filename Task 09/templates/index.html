@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sentiment Analyzer — VADER</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+    h1   { text-align: center; color: #333; margin-bottom: 4px; }
+    p.sub{ text-align: center; color: #777; font-size: 13px; margin-bottom: 24px; }
+    .container { max-width: 700px; margin: 0 auto; }
+
+    /* Pipeline */
+    .pipeline { display: flex; border: 1px solid #ddd; border-radius: 8px;
+                overflow: hidden; background: #fff; margin-bottom: 20px; }
+    .step { flex: 1; padding: 10px 6px; text-align: center; border-right: 1px solid #ddd; }
+    .step:last-child { border-right: none; }
+    .step-num { background: #e67e22; color: #fff; border-radius: 50%; width: 20px; height: 20px;
+                line-height: 20px; font-size: 11px; font-weight: bold;
+                display: inline-block; margin-bottom: 4px; }
+    .step b { display: block; font-size: 11px; }
+    .step span { font-size: 10px; color: #888; }
+
+    /* Cards */
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 8px;
+            padding: 20px; margin-bottom: 16px; }
+    textarea { width: 100%; height: 100px; padding: 10px; font-size: 14px;
+               border: 1px solid #ccc; border-radius: 6px; resize: vertical; box-sizing: border-box; }
+    .btn-row { display: flex; gap: 10px; margin-top: 10px; }
+    button[type=submit] { background: #333; color: #fff; border: none; border-radius: 6px;
+                          padding: 10px 22px; font-size: 14px; cursor: pointer; }
+    button[type=submit]:hover { background: #e67e22; }
+    .btn-clear { background: transparent; border: 1px solid #ccc; border-radius: 6px;
+                 padding: 10px 16px; font-size: 13px; color: #888; cursor: pointer; }
+    .btn-clear:hover { border-color: #c0392b; color: #c0392b; }
+
+    /* Result */
+    .result { border-radius: 8px; padding: 20px; margin-bottom: 16px; border: 1.5px solid; }
+    .result.positive { background: #eaf7ee; border-color: #a8dbb8; }
+    .result.negative { background: #fdf0ee; border-color: #f0b8b2; }
+    .result.neutral  { background: #eef1f7; border-color: #b8c4d8; }
+    .result-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .emoji { font-size: 2.2rem; }
+    .label { font-size: 1.8rem; font-weight: bold; }
+    .positive .label { color: #2d7a4f; } .negative .label { color: #c0392b; } .neutral .label { color: #5a6a85; }
+    .compound { margin-left: auto; font-size: 12px; color: #888; text-align: right; }
+    .compound strong { font-size: 1.3rem; color: #333; display: block; }
+
+    /* Bars */
+    .bar-row { display: grid; grid-template-columns: 68px 1fr 40px;
+               align-items: center; gap: 8px; margin-bottom: 8px; }
+    .bar-name { font-size: 11px; font-weight: bold; text-transform: uppercase; }
+    .bar-track { background: rgba(0,0,0,.1); border-radius: 99px; height: 7px; overflow: hidden; }
+    .bar-fill  { height: 100%; border-radius: 99px; }
+    .pos .bar-fill { background: #2d7a4f; } .neg .bar-fill { background: #c0392b; } .neu .bar-fill { background: #5a6a85; }
+    .bar-val { font-size: 11px; color: #888; }
+    .note { font-size: 11px; color: #888; background: rgba(0,0,0,.04);
+            border-radius: 5px; padding: 6px 10px; margin-top: 12px; }
+
+    /* Samples & History */
+    .side-title { font-size: 11px; font-weight: bold; text-transform: uppercase;
+                  color: #e67e22; margin-bottom: 10px; }
+    .chip { display: block; width: 100%; text-align: left; background: #f9f9f9;
+            border: 1px solid #ddd; border-radius: 6px; padding: 7px 10px;
+            margin-bottom: 6px; font-size: 12px; cursor: pointer; }
+    .chip:hover { border-color: #e67e22; color: #e67e22; }
+    .hist-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid #eee; font-size: 12px; }
+    .hist-item:last-child { border-bottom: none; }
+    .hlabel { font-size: 10px; font-weight: bold; text-transform: uppercase; flex-shrink: 0; }
+    .hlabel.positive { color: #2d7a4f; } .hlabel.negative { color: #c0392b; } .hlabel.neutral { color: #5a6a85; }
+    .no-hist { font-size: 12px; color: #aaa; text-align: center; padding: 8px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>🎭 Sentiment Analyzer</h1>
+  <p class="sub">NLP Task — VADER (NLTK) · Positive / Negative / Neutral</p>
+
+  <!-- Pipeline -->
+  <div class="pipeline">
+    {% for n,l,d in [('1','Input','Raw text'),('2','Preprocess','Clean text'),('3','VADER','Score text'),('4','Compound','–1 to +1'),('5','Label','Pos/Neg/Neu')] %}
+    <div class="step"><div class="step-num">{{n}}</div><b>{{l}}</b><span>{{d}}</span></div>
+    {% endfor %}
+  </div>
+
+  <!-- Input Form -->
+  <div class="card">
+    <form method="POST" action="/">
+      <label style="font-size:11px;font-weight:bold;color:#888;text-transform:uppercase;">Enter Text</label><br><br>
+      <textarea name="text" id="ti" placeholder="e.g. I love this university!" required>{% if result %}{{result.original}}{% endif %}</textarea>
+      <div class="btn-row">
+        <button type="submit">Analyze →</button>
+        <button type="button" class="btn-clear" onclick="fetch('/clear', {method: 'POST'})">Clear History</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Result -->
+  {% if result %}
+  <div class="result {{result.color}}">
+    <div class="result-top">
+      <span class="emoji">{{result.emoji}}</span>
+      <span class="label">{{result.label}}</span>
+      <div class="compound">Compound<strong>{{result.compound}}</strong></div>
+    </div>
+    {% for cls,name,val in [('pos','Positive',result.positive),('neg','Negative',result.negative),('neu','Neutral',result.neutral)] %}
+    <div class="bar-row {{cls}}">
+      <span class="bar-name">{{name}}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:{{val}}%"></div></div>
+      <span class="bar-val">{{val}}%</span>
+    </div>
+    {% endfor %}
+    <div class="note"><b>Preprocessed:</b> {{result.cleaned}}</div>
+  </div>
+  {% endif %}
+
+  <!-- Samples -->
+  <div class="card">
+    <div class="side-title">Try a Sample</div>
+    {% for s in samples %}
+    <button class="chip" onclick="document.getElementById('ti').value=this.innerText">{{s}}</button>
+    {% endfor %}
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <div class="side-title">Recent Analyses</div>
+    {% if history %}
+      {% for h in history %}
+      <div class="hist-item">
+        <span>{{h.emoji}}</span>
+        <span style="flex:1">{{h.original[:60]}}{% if h.original|length > 60 %}…{% endif %}</span>
+        <span class="hlabel {{h.color}}">{{h.label}}</span>
+      </div>
+      {% endfor %}
+    {% else %}<div class="no-hist">No history yet.</div>{% endif %}
+  </div>
+</div>
+</body>
+</html>
