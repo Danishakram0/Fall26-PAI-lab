@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>News Portal</title>
+</head>
+<body>
+
+<h1>Latest Technology News</h1>
+
+{% for news in news_list %}
+<div>
+    <h2>{{ news.title }}</h2>
+    <p>{{ news.description }}</p>
+
+    {% if news.urlToImage %}
+    <img src="{{ news.urlToImage }}" width="300">
+    {% endif %}
+
+    <br><br>
+    <a href="{{ news.url }}" target="_blank">Read More</a>
+</div>
+<hr>
+{% endfor %}
+
+</body>
+</html>
