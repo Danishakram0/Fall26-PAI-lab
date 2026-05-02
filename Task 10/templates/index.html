@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>UniBot - Admission Assistant</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        #chat-container { width: 400px; background: white; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); overflow: hidden; }
+        #chat-box { height: 400px; padding: 20px; overflow-y: auto; border-bottom: 1px solid #eee; }
+        .message { margin-bottom: 15px; padding: 10px; border-radius: 10px; max-width: 80%; }
+        .user { background: #007bff; color: white; align-self: flex-end; margin-left: auto; }
+        .bot { background: #e9ecef; color: #333; }
+        #input-area { display: flex; padding: 15px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; outline: none; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; margin-left: 5px; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+<div id="chat-container">
+    <div style="background: #007bff; color: white; padding: 15px; text-align: center; font-weight: bold;">UniBot Admission Portal</div>
+    <div id="chat-box"></div>
+    <div id="input-area">
+        <input type="text" id="user-input" placeholder="Ask about admissions...">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+</div>
+<script>
+    function sendMessage() {
+        let input = document.getElementById('user-input');
+        let message = input.value;
+        if (!message) return;
+        appendMessage(message, 'user');
+        input.value = '';
+        fetch('/get_response', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({message: message})
+        })
+        .then(res => res.json())
+        .then(data => {
+            appendMessage(data.response, 'bot');
+        });
+    }
+    function appendMessage(text, sender) {
+        let chatBox = document.getElementById('chat-box');
+        let div = document.createElement('div');
+        div.className = 'message ' + sender;
+        div.innerText = text;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+</script>
+</body>
+</html>
